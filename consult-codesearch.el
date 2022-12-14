@@ -1,8 +1,9 @@
-;;; consult-codesearch.el --- consult interface for codesearch -*- lexical-binding: t; -*-
+;;; consult-codesearch.el --- Consult interface for codesearch -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2022 Youngjoo Lee
 
 ;; Author: Youngjoo Lee <youngker@gmail.com>
+;; URL: https://github.com/youngker/consult-codesearch
 ;; Version: 0.1
 ;; Keywords: tools
 ;; Package-Requires: ((emacs "27.1") (codesearch "1") (consult "0.20"))
@@ -22,7 +23,7 @@
 
 ;;; Commentary:
 
-;; consult interface for codesearch
+;; Consult interface for codesearch
 ;;
 ;; See documentation on https://github.com/youngker/consult-codesearch.el
 

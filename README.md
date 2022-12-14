@@ -1,4 +1,4 @@
-consult interface for codesearch
+# Consult interface for codesearch
 
 ## Requirements
 

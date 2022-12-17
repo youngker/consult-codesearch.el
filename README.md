@@ -1,4 +1,6 @@
-# Consult interface for codesearch
+# consult-codesearch.el [![MELPA](http://melpa.org/packages/consult-codesearch-badge.svg)](http://melpa.org/#/consult-codesearch)
+
+Consult interface for codesearch
 
 ## Requirements
 
@@ -6,6 +8,13 @@
 
   [https://github.com/google/codesearch](https://github.com/google/codesearch)
 
+## Usage
+To use the `-f` or `-i` options, use `--` after the search pattern.
+
+```
+!/0 Codesearch : import android -- -f java$ -i
+
+```
 
 You can add these lines to your init file.
 

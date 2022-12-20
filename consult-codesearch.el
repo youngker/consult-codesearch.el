@@ -40,13 +40,13 @@
 (defvar consult-codesearch--args nil
   "Codesearch arguments.")
 
-(defcustom consult-codesearch--find-file
+(defcustom consult-codesearch-find-file-args
   "csearch -l -f"
   "Codesearch file search command."
   :type 'string
   :group 'consult-codesearch)
 
-(defcustom consult-codesearch--codesearch
+(defcustom consult-codesearch-grep-args
   "csearch -n"
   "Codesearch search command."
   :type 'string
@@ -88,30 +88,30 @@
     (pop-to-buffer codesearch-output-buffer)))
 
 ;;;###autoload
-(defun consult-codesearch (&optional dir initial)
+(defun consult-codesearch (&optional dir)
   "Search with `codesearch' for files in DIR where the content matches a regexp.
 
 The initial input is given by the INITIAL argument."
   (interactive "P")
-  (let ((initial (thing-at-point 'symbol))
-        (consult-codesearch--args consult-codesearch--codesearch)
+  (let ((initial (substring-no-properties (or (thing-at-point 'symbol) "")))
+        (consult-codesearch--args consult-codesearch-grep-args)
         (consult-async-refresh-delay 0.1)
         (consult-async-input-throttle 0)
         (consult-async-input-debounce 0)
         (consult--grep-match-regexp consult-codesearch--match-regexp)
-        (index (consult-codesearch--set-index dir)))
+        (_index (consult-codesearch--set-index dir)))
     (consult--grep "Codesearch" #'consult-codesearch--builder dir initial)))
 
 ;;;###autoload
-(defun consult-codesearch-find-file (&optional dir initial)
+(defun consult-codesearch-find-file (&optional dir)
   "Search for files in DIR matching input regexp given INITIAL input."
   (interactive "P")
-  (let* ((initial (thing-at-point 'symbol))
-         (consult-codesearch--args consult-codesearch--find-file)
+  (let* ((initial (substring-no-properties (or (thing-at-point 'symbol) "")))
+         (consult-codesearch--args consult-codesearch-find-file-args)
          (consult-async-refresh-delay 0.1)
          (consult-async-input-throttle 0)
          (consult-async-input-debounce 0)
-         (index (consult-codesearch--set-index dir))
+         (_index (consult-codesearch--set-index dir))
          (prompt-dir (consult--directory-prompt "Codesearch Find File" dir))
          (default-directory (cdr prompt-dir)))
     (find-file (consult--find (car prompt-dir)

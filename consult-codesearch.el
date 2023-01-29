@@ -66,12 +66,12 @@
                (`(,re . ,hl)
                 (funcall consult--regexp-compiler arg 'extended ignore-case)))
     (when re
-      `(:command (,@cmd
-                  ,@opts
-                  ,(let ((jre (consult--join-regexps re 'extended)))
-                     (if files-with-matchs (concat "(?i)" jre) jre))
-                  ,@(and files-with-matchs '("$")))
-        :highlight ,hl))))
+      (cons (append cmd opts
+                    (let ((jre (consult--join-regexps re 'extended)))
+                      (if files-with-matchs
+                          (list (concat "(?i)" jre) "$")
+                        (list jre))))
+            hl))))
 
 (defun consult-codesearch--set-index (dir)
   "Set CSEARCHINDEX variable in DIR."

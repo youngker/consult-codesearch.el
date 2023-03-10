@@ -4,7 +4,7 @@
 
 ;; Author: Youngjoo Lee <youngker@gmail.com>
 ;; URL: https://github.com/youngker/consult-codesearch
-;; Version: 0.1
+;; Version: 0.2
 ;; Keywords: tools
 ;; Package-Requires: ((emacs "27.1") (codesearch "1") (consult "0.20"))
 
@@ -56,22 +56,23 @@
   "\\`\\(?:\\./\\)?\\([^\n\0]+\\):\\([0-9]+\\)\\([-:\0]\\)"
   "Regexp used to match file and line of codesearch output.")
 
-(defun consult-codesearch--builder (input)
-  "Build command line given INPUT."
-  (pcase-let* ((cmd (consult--build-args consult-codesearch--args))
-               (`(,arg . ,opts) (consult--command-split input))
-               (flags (append cmd opts))
-               (files-with-matchs (member "-l" flags))
-               (ignore-case (member "-i" flags))
-               (`(,re . ,hl)
-                (funcall consult--regexp-compiler arg 'extended ignore-case)))
-    (when re
-      (cons (append cmd opts
-                    (let ((jre (consult--join-regexps re 'extended)))
-                      (if files-with-matchs
-                          (list (concat "(?i)" jre) "$")
-                        (list jre))))
-            hl))))
+(defun consult-codesearch--builder (_paths)
+  "Build command line given PATHS."
+  (let ((cmd (consult--build-args consult-codesearch--args)))
+    (lambda (input)
+      (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+                   (flags (append cmd opts))
+                   (files-with-matchs (member "-l" flags))
+                   (ignore-case (member "-i" flags))
+                   (`(,re . ,hl)
+                    (funcall consult--regexp-compiler arg 'extended ignore-case)))
+        (when re
+          (cons (append cmd opts
+                        (let ((jre (consult--join-regexps re 'extended)))
+                          (if files-with-matchs
+                              (list (concat "(?i)" jre) "$")
+                            (list jre))))
+                hl))))))
 
 (defun consult-codesearch--set-index (dir)
   "Set CSEARCHINDEX variable in DIR."
@@ -106,16 +107,16 @@ The initial input is given by the INITIAL argument."
 (defun consult-codesearch-find-file (&optional dir)
   "Search for files in DIR matching input regexp given INITIAL input."
   (interactive "P")
-  (let* ((initial (substring-no-properties (or (thing-at-point 'symbol) "")))
-         (consult-codesearch--args consult-codesearch-find-file-args)
-         (consult-async-refresh-delay 0.1)
-         (consult-async-input-throttle 0)
-         (consult-async-input-debounce 0)
-         (_index (consult-codesearch--set-index dir))
-         (prompt-dir (consult--directory-prompt "Codesearch Find File" dir))
-         (default-directory (cdr prompt-dir)))
-    (find-file (consult--find (car prompt-dir)
-                              #'consult-codesearch--builder initial))))
+  (let ((initial (substring-no-properties (or (thing-at-point 'symbol) "")))
+        (consult-codesearch--args consult-codesearch-find-file-args)
+        (consult-async-refresh-delay 0.1)
+        (consult-async-input-throttle 0)
+        (consult-async-input-debounce 0)
+        (_index (consult-codesearch--set-index dir)))
+    (pcase-let* ((`(,prompt ,paths ,dir) (consult--directory-prompt "Codesearch Find File" dir))
+                 (default-directory dir)
+                 (builder (consult-codesearch--builder paths)))
+      (find-file (consult--find prompt builder initial)))))
 
 (provide 'consult-codesearch)
 ;;; consult-codesearch.el ends here

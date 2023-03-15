@@ -4,9 +4,9 @@
 
 ;; Author: Youngjoo Lee <youngker@gmail.com>
 ;; URL: https://github.com/youngker/consult-codesearch
-;; Version: 0.2
+;; Version: 0.3
 ;; Keywords: tools
-;; Package-Requires: ((emacs "27.1") (codesearch "1") (consult "0.20"))
+;; Package-Requires: ((emacs "27.1") (consult "0.20"))
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@
 
 ;;; Code:
 
-(require 'codesearch)
 (require 'consult)
 
 (defgroup consult-codesearch nil
@@ -39,6 +38,14 @@
 
 (defvar consult-codesearch--args nil
   "Codesearch arguments.")
+
+(defvar consult-codesearch-buffer "*codesearch*"
+  "Codesearch buffer.")
+
+(defcustom consult-codesearch-csearchindex ".csearchindex"
+  "Index file for each projects."
+  :type 'string
+  :group 'consult-codesearch)
 
 (defcustom consult-codesearch-find-file-args
   "csearch -l -f"
@@ -76,17 +83,40 @@
 
 (defun consult-codesearch--set-index (dir)
   "Set CSEARCHINDEX variable in DIR."
-  (let* ((search-dir (or dir default-directory))
-         (index-file (codesearch--csearchindex search-dir)))
-    (setenv "CSEARCHINDEX" index-file)))
+  (let* ((start-dir (or dir default-directory))
+         (index-dir (locate-dominating-file
+                     start-dir consult-codesearch-csearchindex)))
+    (if index-dir
+        (setenv "CSEARCHINDEX"
+                (expand-file-name (concat index-dir consult-codesearch-csearchindex)))
+      (error "Can't find csearchindex"))))
 
 ;;;###autoload
 (defun consult-codesearch-build-index (dir)
   "Create index file at DIR."
   (interactive "DIndex files in directory: ")
-  (let ((index-file (concat dir codesearch-csearchindex)))
-    (codesearch-build-index (expand-file-name dir) index-file)
-    (pop-to-buffer codesearch-output-buffer)))
+  (setenv "CSEARCHINDEX" (expand-file-name (concat dir consult-codesearch-csearchindex)))
+  (let ((proc (apply 'start-process "codesearch"
+                     consult-codesearch-buffer "cindex" (list (expand-file-name dir)))))
+    (with-current-buffer consult-codesearch-buffer
+      (pop-to-buffer consult-codesearch-buffer)
+      (local-set-key (kbd "q") 'quit-window)
+      (let ((buffer-read-only nil))
+        (erase-buffer)))
+    (set-process-filter
+     proc
+     (lambda (process output)
+       (with-current-buffer (process-buffer process)
+         (let ((buffer-read-only nil))
+           (insert output)))))
+    (set-process-sentinel
+     proc
+     (lambda (process event)
+       (with-current-buffer (process-buffer process)
+         (when (string= event "finished\n")
+           (let ((buffer-read-only nil))
+             (insert "\nIndexing finished"))
+           (setq buffer-read-only t)))))))
 
 ;;;###autoload
 (defun consult-codesearch (&optional dir)
